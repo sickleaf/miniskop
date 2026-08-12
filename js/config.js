@@ -1,3 +1,3 @@
 const APP_CONFIG = {
-  apiUrl: '' // Apps Script Web APIデプロイ後に設定
+  apiUrl: 'https://script.google.com/macros/s/AKfycbzousJhUMuzoYdhGzgDQDNCx_6EAWp3zJecSeWOGpJvi1j_AozUG7F5VwPQL2hs2CbJ/exec'
 };
