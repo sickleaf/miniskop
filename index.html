@@ -8,19 +8,70 @@
 </head>
 <body>
 <main class="container">
-<header><h1>ジャンル希望入力</h1><p id="status-message">参加者情報を確認しています。</p></header>
-<section id="error-panel" class="panel error-panel" hidden><h2>ページを表示できません</h2><p id="error-message"></p></section>
-<section id="participant-panel" class="panel" hidden>
-<div class="participant-header"><div><span class="label">参加者</span><div id="participant-name" class="participant-name"></div></div><div><span class="label">回答状況</span><div id="answer-status"></div></div></div>
-<p id="last-submitted" class="muted"></p>
-<section id="entry-panel">
-<h2>希望順位</h2><p>ジャンルを選択すると次の空いている順位へ追加されます。全ジャンルを順位付けしてください。</p>
-<div class="progress-row"><span id="progress-text">0 / 0 選択済み</span><button id="reset-button" type="button" class="secondary">選択をリセット</button></div>
-<div class="columns"><section><h3>未選択ジャンル</h3><div id="genre-list" class="genre-list"></div></section><section><h3>選択済み順位</h3><ol id="ranking-list" class="ranking-list"></ol></section></div>
-<div class="actions"><button id="submit-button" type="button" disabled>回答を保存</button></div>
-</section>
-<section id="result-panel" hidden><h2>確定結果</h2><div id="result-list"></div></section>
-</section>
+  <header>
+    <h1>ジャンル希望入力</h1>
+    <p id="status-message">参加者情報を確認しています。</p>
+  </header>
+
+  <section id="error-panel" class="panel error-panel" hidden>
+    <h2>ページを表示できません</h2>
+    <p id="error-message"></p>
+  </section>
+
+  <section id="participant-panel" class="panel" hidden>
+    <div class="participant-header">
+      <div>
+        <span class="label">参加者</span>
+        <div id="participant-name" class="participant-name"></div>
+      </div>
+      <div>
+        <span class="label">回答状況</span>
+        <div id="answer-status"></div>
+      </div>
+    </div>
+
+    <p id="last-submitted" class="muted"></p>
+
+    <section id="entry-panel">
+      <h2>希望順位</h2>
+      <p>
+        ジャンルを選択すると次の空いている順位へ追加されます。
+        全ジャンルを順位付けしてください。
+      </p>
+
+      <div class="progress-row">
+        <span id="progress-text">0 / 0 選択済み</span>
+
+        <div class="entry-actions">
+          <button id="submit-button" type="button" disabled>回答を保存</button>
+          <button id="reset-button" type="button" class="secondary">選択をリセット</button>
+        </div>
+      </div>
+
+      <div id="save-status" class="save-status" role="status" aria-live="polite"></div>
+
+      <div class="columns">
+        <section>
+          <h3>未選択ジャンル</h3>
+          <div id="genre-list" class="genre-list"></div>
+        </section>
+
+        <section>
+          <h3>選択済み順位</h3>
+          <ol id="ranking-list" class="ranking-list"></ol>
+        </section>
+      </div>
+    </section>
+
+    <section id="result-panel" hidden>
+      <h2>確定結果</h2>
+      <div id="result-list"></div>
+    </section>
+  </section>
 </main>
-<script src="./js/config.js"></script><script src="./js/api.js"></script><script src="./js/app.js"></script>
-</body></html>
+
+<script src="./js/config.js"></script>
+<script src="./js/api.js"></script>
+<script src="./js/app.js"></script>
+</body>
+</html>
