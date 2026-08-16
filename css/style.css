@@ -75,8 +75,18 @@ body {
 .unsaved-warning {
   margin: 10px 0 16px;
   padding: 12px 14px;
-  border: 2px solid #dc2626;
   border-radius: 8px;
+}
+
+.unsaved-warning.neutral {
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  color: #111827;
+  font-weight: 600;
+}
+
+.unsaved-warning.dirty {
+  border: 2px solid #dc2626;
   background: #fef2f2;
   color: #991b1b;
   font-weight: 700;
@@ -127,17 +137,28 @@ button {
   background: #f8fafc;
 }
 
+/*
+ * 各行を同じ4列構成に固定する。
+ * 1: ↓↑
+ * 2: ジャンル名
+ * 3: 変更前順位（未変更時も空の領域を確保）
+ * 4: 外す
+ *
+ * これにより、変更前表示の有無やジャンル名の長さにかかわらず、
+ * ↓↑と「外す」の位置が各行で縦に揃う。
+ */
 .ranking-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr) 6.8em max-content;
   align-items: center;
+  column-gap: 10px;
   width: 100%;
   min-width: 0;
-  gap: 10px;
 }
 
 .ranking-move {
   display: inline-flex;
-  gap: 6px;
+  gap: 5px;
   flex: 0 0 auto;
 }
 
@@ -148,16 +169,18 @@ button {
 }
 
 .ranking-old-rank {
-  margin-left: auto;
-  padding-left: 18px;
+  min-width: 6.8em;
+  text-align: right;
   white-space: nowrap;
   color: #7c2d12;
   font-weight: 700;
-  flex: 0 0 auto;
+}
+
+.ranking-old-rank.empty {
+  visibility: hidden;
 }
 
 .ranking-remove {
-  margin-left: 12px;
   flex: 0 0 auto;
 }
 
@@ -175,7 +198,11 @@ button.secondary,
   color: #1f2937;
 }
 
-.ranking-move button,
+.ranking-move button {
+  width: 34px;
+  padding: 7px 0;
+}
+
 .ranking-remove {
   padding: 7px 10px;
 }
@@ -202,5 +229,29 @@ button:disabled {
 
   .entry-actions button {
     flex: 1 1 0;
+  }
+
+  .ranking-list {
+    padding-left: 1.7rem;
+  }
+
+  .ranking-item {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+
+  .ranking-row {
+    grid-template-columns: max-content minmax(0, 1fr) 6.4em max-content;
+    column-gap: 6px;
+  }
+
+  .ranking-old-rank {
+    min-width: 6.4em;
+    font-size: .9rem;
+  }
+
+  .ranking-remove {
+    padding-left: 8px;
+    padding-right: 8px;
   }
 }

@@ -80,7 +80,7 @@
     $('progress-text').textContent =
       `${state.ranking.length} / ${state.genres.length} 選択済み`;
 
-    renderUnsavedWarning();
+    renderAnswerChangeNotice();
     updateButtons();
   }
 
@@ -127,7 +127,7 @@
       const moveControls = document.createElement('span');
       moveControls.className = 'ranking-move';
 
-      // 仕様変更：↓ → ↑ の順に表示。
+      // 表示順は「↓」「↑」。
       moveControls.append(
         makeMoveButton('↓', index, 1),
         makeMoveButton('↑', index, -1)
@@ -137,20 +137,23 @@
       name.className = 'ranking-name';
       name.textContent = genre ? genre.name : genreId;
 
-      row.append(moveControls, name);
-
       /*
-       * 回答済みでページを開き、一度でも順位を変更した場合のみ、
-       * 保存済みだった変更前順位を「外す」の手前に表示する。
+       * 「変更前」の表示有無にかかわらず、必ずこの列を生成する。
+       * 未変更時は visibility:hidden で領域だけ確保し、
+       * ↑↓・ジャンル名・外すの位置を各行で揃える。
        */
+      const oldRankElement = document.createElement('span');
+      oldRankElement.className = 'ranking-old-rank';
+
       if (state.loadedAsAnswered && state.dirtyAfterAnswered) {
         const oldRank = getSavedRank(genreId);
-        const oldRankElement = document.createElement('span');
-        oldRankElement.className = 'ranking-old-rank';
         oldRankElement.textContent = oldRank
           ? `変更前: ${oldRank}`
           : '変更前: ―';
-        row.appendChild(oldRankElement);
+      } else {
+        oldRankElement.textContent = '変更前: 00';
+        oldRankElement.classList.add('empty');
+        oldRankElement.setAttribute('aria-hidden', 'true');
       }
 
       const remove = document.createElement('button');
@@ -168,7 +171,13 @@
         render();
       });
 
-      row.appendChild(remove);
+      row.append(
+        moveControls,
+        name,
+        oldRankElement,
+        remove
+      );
+
       li.appendChild(row);
       list.appendChild(li);
     });
@@ -202,21 +211,35 @@
   function markRankingChanged() {
     if (state.loadedAsAnswered) {
       /*
-       * 「一度でも変更した場合」という仕様のため、
-       * その後たまたま元の並びへ戻しても、保存するまでは警告を残す。
+       * 「一度でも変更した場合」という仕様なので、
+       * 元の順番へ戻しても、再保存するまでは変更済み表示を維持する。
        */
       state.dirtyAfterAnswered = true;
     }
   }
 
-  function renderUnsavedWarning() {
-    const warning = $('unsaved-warning');
-    if (!warning) return;
+  function renderAnswerChangeNotice() {
+    const notice = $('unsaved-warning');
+    if (!notice) return;
 
-    warning.hidden = !(
-      state.loadedAsAnswered &&
-      state.dirtyAfterAnswered
-    );
+    if (!state.loadedAsAnswered) {
+      notice.hidden = true;
+      return;
+    }
+
+    notice.hidden = false;
+
+    if (state.dirtyAfterAnswered) {
+      notice.className = 'unsaved-warning dirty';
+      notice.textContent =
+        '順位を変更しましたが、変更内容はまだ保存されていません。' +
+        '「回答を保存」を押すまで変更は反映されません。';
+    } else {
+      notice.className = 'unsaved-warning neutral';
+      notice.textContent =
+        '前回の回答から変更できますが、' +
+        '「回答を保存」を押すまで変更は反映されません。';
+    }
   }
 
   function getSavedRank(genreId) {
@@ -262,8 +285,8 @@
       );
     } catch (saveError) {
       /*
-       * Apps Script側で書き込みは完了しているのに、
-       * Content Serviceの応答取得時だけHTTPエラーになるケースへの対策。
+       * Apps Script側で書き込み済みなのに応答だけHTTPエラーになる場合は、
+       * 現在回答を再取得し、送信順位と一致すれば保存成功として扱う。
        */
       try {
         setSaveStatus(
@@ -304,16 +327,12 @@
       ? `最終回答日時: ${submittedAt}`
       : '';
 
-    /*
-     * 保存成功した順位を新しい「変更前順位」の基準に更新する。
-     * 以降さらに変更した場合は、この保存済み順位を表示する。
-     */
     state.savedRanking = [...submittedRanking];
     state.loadedAsAnswered = true;
     state.dirtyAfterAnswered = false;
 
     setSaveStatus('回答を保存しました。', 'success');
-    renderUnsavedWarning();
+    renderAnswerChangeNotice();
   }
 
   function setSubmitting(value) {
