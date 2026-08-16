@@ -72,6 +72,20 @@ body {
   color: #b91c1c;
 }
 
+.unsaved-warning {
+  margin: 10px 0 16px;
+  padding: 12px 14px;
+  border: 2px solid #dc2626;
+  border-radius: 8px;
+  background: #fef2f2;
+  color: #991b1b;
+  font-weight: 700;
+}
+
+.unsaved-warning[hidden] {
+  display: none;
+}
+
 .columns {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -133,8 +147,17 @@ button {
   color: #1f2937;
 }
 
-.ranking-remove {
+.ranking-old-rank {
   margin-left: auto;
+  padding-left: 18px;
+  white-space: nowrap;
+  color: #7c2d12;
+  font-weight: 700;
+  flex: 0 0 auto;
+}
+
+.ranking-remove {
+  margin-left: 12px;
   flex: 0 0 auto;
 }
 

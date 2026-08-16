@@ -3,8 +3,11 @@
     token: '',
     genres: [],
     ranking: [],
+    savedRanking: [],
     participant: null,
-    submitting: false
+    submitting: false,
+    loadedAsAnswered: false,
+    dirtyAfterAnswered: false
   };
 
   const $ = (id) => document.getElementById(id);
@@ -24,7 +27,10 @@
 
       state.participant = data.participant;
       state.genres = data.genres || [];
-      state.ranking = data.ranking || [];
+      state.ranking = [...(data.ranking || [])];
+      state.savedRanking = [...state.ranking];
+      state.loadedAsAnswered = data.answerStatus === '回答済み';
+      state.dirtyAfterAnswered = false;
 
       $('participant-name').textContent = state.participant.displayName;
       $('answer-status').textContent = data.answerStatus || '未回答';
@@ -57,7 +63,9 @@
   function bindEvents() {
     $('reset-button').addEventListener('click', () => {
       if (state.submitting) return;
+
       state.ranking = [];
+      markRankingChanged();
       setSaveStatus('');
       render();
     });
@@ -72,6 +80,7 @@
     $('progress-text').textContent =
       `${state.ranking.length} / ${state.genres.length} 選択済み`;
 
+    renderUnsavedWarning();
     updateButtons();
   }
 
@@ -91,7 +100,9 @@
 
         button.addEventListener('click', () => {
           if (state.submitting) return;
+
           state.ranking.push(genre.id);
+          markRankingChanged();
           setSaveStatus('');
           render();
         });
@@ -115,28 +126,49 @@
 
       const moveControls = document.createElement('span');
       moveControls.className = 'ranking-move';
+
+      // 仕様変更：↓ → ↑ の順に表示。
       moveControls.append(
-        makeMoveButton('↑', index, -1),
-        makeMoveButton('↓', index, 1)
+        makeMoveButton('↓', index, 1),
+        makeMoveButton('↑', index, -1)
       );
 
       const name = document.createElement('span');
       name.className = 'ranking-name';
       name.textContent = genre ? genre.name : genreId;
 
+      row.append(moveControls, name);
+
+      /*
+       * 回答済みでページを開き、一度でも順位を変更した場合のみ、
+       * 保存済みだった変更前順位を「外す」の手前に表示する。
+       */
+      if (state.loadedAsAnswered && state.dirtyAfterAnswered) {
+        const oldRank = getSavedRank(genreId);
+        const oldRankElement = document.createElement('span');
+        oldRankElement.className = 'ranking-old-rank';
+        oldRankElement.textContent = oldRank
+          ? `変更前: ${oldRank}`
+          : '変更前: ―';
+        row.appendChild(oldRankElement);
+      }
+
       const remove = document.createElement('button');
       remove.type = 'button';
       remove.className = 'ranking-remove';
       remove.textContent = '外す';
       remove.disabled = state.submitting;
+
       remove.addEventListener('click', () => {
         if (state.submitting) return;
+
         state.ranking.splice(index, 1);
+        markRankingChanged();
         setSaveStatus('');
         render();
       });
 
-      row.append(moveControls, name, remove);
+      row.appendChild(remove);
       li.appendChild(row);
       list.appendChild(li);
     });
@@ -159,11 +191,37 @@
       [state.ranking[index], state.ranking[destination]] =
         [state.ranking[destination], state.ranking[index]];
 
+      markRankingChanged();
       setSaveStatus('');
       render();
     });
 
     return button;
+  }
+
+  function markRankingChanged() {
+    if (state.loadedAsAnswered) {
+      /*
+       * 「一度でも変更した場合」という仕様のため、
+       * その後たまたま元の並びへ戻しても、保存するまでは警告を残す。
+       */
+      state.dirtyAfterAnswered = true;
+    }
+  }
+
+  function renderUnsavedWarning() {
+    const warning = $('unsaved-warning');
+    if (!warning) return;
+
+    warning.hidden = !(
+      state.loadedAsAnswered &&
+      state.dirtyAfterAnswered
+    );
+  }
+
+  function getSavedRank(genreId) {
+    const index = state.savedRanking.indexOf(genreId);
+    return index >= 0 ? index + 1 : null;
   }
 
   function updateButtons() {
@@ -198,14 +256,14 @@
         submittedRanking
       );
 
-      applySaveSuccess(data.submittedAt || '');
+      applySaveSuccess(
+        data.submittedAt || '',
+        submittedRanking
+      );
     } catch (saveError) {
       /*
        * Apps Script側で書き込みは完了しているのに、
        * Content Serviceの応答取得時だけHTTPエラーになるケースへの対策。
-       *
-       * 保存後エラー時は現在回答を再取得し、
-       * 送信内容と完全一致していれば保存成功として扱う。
        */
       try {
         setSaveStatus(
@@ -216,7 +274,10 @@
         const check = await DraftApi.loadParticipant(state.token);
 
         if (isSameRanking(check.ranking || [], submittedRanking)) {
-          applySaveSuccess(check.lastSubmittedAt || '');
+          applySaveSuccess(
+            check.lastSubmittedAt || '',
+            submittedRanking
+          );
         } else {
           throw saveError;
         }
@@ -237,13 +298,22 @@
     }
   }
 
-  function applySaveSuccess(submittedAt) {
+  function applySaveSuccess(submittedAt, submittedRanking) {
     $('answer-status').textContent = '回答済み';
     $('last-submitted').textContent = submittedAt
       ? `最終回答日時: ${submittedAt}`
       : '';
 
+    /*
+     * 保存成功した順位を新しい「変更前順位」の基準に更新する。
+     * 以降さらに変更した場合は、この保存済み順位を表示する。
+     */
+    state.savedRanking = [...submittedRanking];
+    state.loadedAsAnswered = true;
+    state.dirtyAfterAnswered = false;
+
     setSaveStatus('回答を保存しました。', 'success');
+    renderUnsavedWarning();
   }
 
   function setSubmitting(value) {
