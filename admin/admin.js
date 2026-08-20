@@ -1,10 +1,8 @@
 (() => {
-  const REFRESH_MS = 3000;
-
   const state = {
     token: '',
-    timer: null,
-    loading: false
+    loading: false,
+    data: null
   };
 
   const $ = (id) => document.getElementById(id);
@@ -21,23 +19,41 @@
     }
 
     $('refresh-button').addEventListener('click', refresh);
+    $('dialog-close').addEventListener('click', closeDialog);
+
+    document.querySelectorAll('.round-link').forEach((button) => {
+      button.addEventListener('click', () => {
+        const round = Number(button.dataset.round);
+        openRoundDialog(round);
+      });
+    });
+
+    $('round-dialog').addEventListener('click', (event) => {
+      if (event.target === $('round-dialog')) {
+        closeDialog();
+      }
+    });
 
     refresh();
-    state.timer = setInterval(refresh, REFRESH_MS);
   }
 
   async function refresh() {
     if (state.loading) return;
     state.loading = true;
+    $('refresh-button').disabled = true;
+    $('refresh-button').textContent = '更新中…';
 
     try {
       const data = await DraftApi.loadAdminStatus(state.token);
+      state.data = data;
       render(data);
       clearError();
     } catch (error) {
       showError(error.message);
     } finally {
       state.loading = false;
+      $('refresh-button').disabled = false;
+      $('refresh-button').textContent = '表示を更新';
     }
   }
 
@@ -52,28 +68,38 @@
     $('progress-label').textContent = data.progressLabel;
     $('fetched-at').textContent = data.fetchedAt || '';
 
-    const tbody = $('participant-rows');
-    tbody.innerHTML = '';
+    const participants = data.participants || [];
+    const splitIndex = Math.ceil(participants.length / 2);
 
-    (data.participants || []).forEach((p) => {
-      const tr = document.createElement('tr');
+    renderParticipantTable(
+      $('participant-rows-left'),
+      participants.slice(0, splitIndex)
+    );
 
-      tr.appendChild(cell(String(p.absoluteRank), 'rank-col'));
-      tr.appendChild(cell(p.displayName, 'name-col'));
-      tr.appendChild(answerCell(p));
-
-      for (let i = 0; i < 3; i++) {
-        tr.appendChild(roundCell(p.rounds?.[i]));
-      }
-
-      tr.appendChild(finalCell(p.finalAssignments || []));
-      tbody.appendChild(tr);
-    });
+    renderParticipantTable(
+      $('participant-rows-right'),
+      participants.slice(splitIndex)
+    );
 
     $('status-panel').hidden = false;
   }
 
-  function cell(text, className = '') {
+  function renderParticipantTable(tbody, participants) {
+    tbody.innerHTML = '';
+
+    participants.forEach((p) => {
+      const tr = document.createElement('tr');
+
+      tr.appendChild(textCell(String(p.absoluteRank), 'rank-col'));
+      tr.appendChild(textCell(p.displayName, 'name-col'));
+      tr.appendChild(answerCell(p));
+      tr.appendChild(finalCell(p.finalAssignments || []));
+
+      tbody.appendChild(tr);
+    });
+  }
+
+  function textCell(text, className = '') {
     const td = document.createElement('td');
     td.textContent = text;
     if (className) td.className = className;
@@ -99,55 +125,111 @@
     return td;
   }
 
-  function roundCell(round) {
-    const td = document.createElement('td');
-
-    if (!round) {
-      td.textContent = '未実施';
-      td.className = 'round-empty';
-      return td;
-    }
-
-    const genre = document.createElement('span');
-    genre.className = 'round-genre';
-    genre.textContent = round.genreName;
-    td.appendChild(genre);
-
-    if (round.preferenceRank) {
-      const rank = document.createElement('span');
-      rank.className = 'round-rank';
-      rank.textContent = `第${round.preferenceRank}希望`;
-      td.appendChild(rank);
-    }
-
-    return td;
-  }
-
   function finalCell(assignments) {
     const td = document.createElement('td');
     td.className = 'final-col';
 
+    /*
+     * ドラフト前・途中で最終結果がまだ存在しない場合は空欄。
+     */
     if (!assignments.length) {
-      td.textContent = '未確定';
+      td.textContent = '';
       td.classList.add('final-empty');
       return td;
     }
 
-    assignments.forEach((a, index) => {
-      const line = document.createElement('span');
-      line.className = 'final-item';
+    const wrap = document.createElement('div');
+    wrap.className = 'final-items';
 
-      const rank = a.preferenceRank
-        ? `（第${a.preferenceRank}希望）`
-        : '';
+    assignments.forEach((a) => {
+      const item = document.createElement('span');
+      item.className = 'final-item';
 
-      line.textContent =
-        `${index + 1}. ${a.genreName}${rank}`;
+      const genre = document.createElement('span');
+      genre.textContent = a.genreName;
+      item.appendChild(genre);
 
-      td.appendChild(line);
+      if (a.preferenceRank) {
+        const rank = document.createElement('span');
+        rank.className = 'final-rank';
+        rank.textContent = `（${a.preferenceRank}）`;
+        item.appendChild(rank);
+      }
+
+      wrap.appendChild(item);
     });
 
+    td.appendChild(wrap);
     return td;
+  }
+
+  function openRoundDialog(round) {
+    if (!state.data) return;
+
+    const dialog = $('round-dialog');
+    const participants = state.data.participants || [];
+
+    $('round-dialog-title').textContent =
+      `第${round}巡 ドラフト結果`;
+
+    const tbody = $('round-dialog-body');
+    tbody.innerHTML = '';
+
+    participants.forEach((p) => {
+      const tr = document.createElement('tr');
+
+      tr.appendChild(
+        textCell(String(p.absoluteRank), 'dialog-rank-col')
+      );
+      tr.appendChild(
+        textCell(p.displayName, 'dialog-name-col')
+      );
+
+      const resultTd = document.createElement('td');
+      const result = p.rounds?.[round - 1];
+
+      if (!result) {
+        const empty = document.createElement('span');
+        empty.className = 'round-result-empty';
+        empty.textContent =
+          state.data.completedRound >= round
+            ? '取得結果なし'
+            : '未実施';
+        resultTd.appendChild(empty);
+      } else {
+        const genre = document.createElement('span');
+        genre.className = 'round-result-genre';
+        genre.textContent = result.genreName;
+        resultTd.appendChild(genre);
+
+        if (result.preferenceRank) {
+          const rank = document.createElement('span');
+          rank.className = 'round-result-rank';
+          rank.textContent =
+            `（第${result.preferenceRank}希望）`;
+          resultTd.appendChild(rank);
+        }
+      }
+
+      tr.appendChild(resultTd);
+      tbody.appendChild(tr);
+    });
+
+    if (typeof dialog.showModal === 'function') {
+      dialog.showModal();
+    } else {
+      dialog.setAttribute('open', '');
+    }
+  }
+
+  function closeDialog() {
+    const dialog = $('round-dialog');
+
+    if (typeof dialog.close === 'function' && dialog.open) {
+      dialog.close();
+    } else {
+      dialog.removeAttribute('open');
+    }
   }
 
   function showError(message) {

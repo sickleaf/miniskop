@@ -13,9 +13,9 @@
       <h1>ジャンルドラフト進行状況</h1>
       <p id="set-label" class="subtle">状態を取得しています。</p>
     </div>
+
     <div class="header-actions">
-      <span id="auto-refresh-status" class="subtle">自動更新: 3秒</span>
-      <button id="refresh-button" type="button">今すぐ更新</button>
+      <button id="refresh-button" type="button">表示を更新</button>
     </div>
   </header>
 
@@ -25,43 +25,82 @@
   </section>
 
   <section id="status-panel" hidden>
-    <div class="summary-grid">
-      <div class="summary-card">
+    <div class="summary-row">
+      <div>
         <span class="summary-label">回答受付</span>
         <strong id="reception-status"></strong>
       </div>
-      <div class="summary-card">
+      <div>
         <span class="summary-label">ドラフト状態</span>
         <strong id="draft-status"></strong>
       </div>
-      <div class="summary-card">
+      <div>
         <span class="summary-label">進行</span>
         <strong id="progress-label"></strong>
       </div>
-      <div class="summary-card">
-        <span class="summary-label">最終取得時刻</span>
+      <div>
+        <span class="summary-label">表示更新</span>
         <strong id="fetched-at"></strong>
       </div>
     </div>
 
-    <div class="table-wrap">
-      <table class="status-table">
-        <thead>
-          <tr>
-            <th class="rank-col">順位</th>
-            <th class="name-col">参加者</th>
-            <th class="answer-col">希望回答</th>
-            <th>第1巡</th>
-            <th>第2巡</th>
-            <th>第3巡</th>
-            <th class="final-col">最終結果</th>
-          </tr>
-        </thead>
-        <tbody id="participant-rows"></tbody>
-      </table>
+    <nav class="round-links" aria-label="巡別結果">
+      <button class="round-link" type="button" data-round="1">第1巡</button>
+      <button class="round-link" type="button" data-round="2">第2巡</button>
+      <button class="round-link" type="button" data-round="3">第3巡</button>
+    </nav>
+
+    <div class="participant-tables">
+      <div class="table-wrap">
+        <table class="status-table">
+          <thead>
+            <tr>
+              <th class="rank-col">順位</th>
+              <th class="name-col">参加者</th>
+              <th class="answer-col">回答状況</th>
+              <th class="final-col">最終結果</th>
+            </tr>
+          </thead>
+          <tbody id="participant-rows-left"></tbody>
+        </table>
+      </div>
+
+      <div class="table-wrap">
+        <table class="status-table">
+          <thead>
+            <tr>
+              <th class="rank-col">順位</th>
+              <th class="name-col">参加者</th>
+              <th class="answer-col">回答状況</th>
+              <th class="final-col">最終結果</th>
+            </tr>
+          </thead>
+          <tbody id="participant-rows-right"></tbody>
+        </table>
+      </div>
     </div>
   </section>
 </main>
+
+<dialog id="round-dialog" class="round-dialog">
+  <div class="dialog-header">
+    <h2 id="round-dialog-title">第1巡 結果</h2>
+    <button id="dialog-close" type="button" class="dialog-close">閉じる</button>
+  </div>
+
+  <div class="round-dialog-table-wrap">
+    <table class="round-dialog-table">
+      <thead>
+        <tr>
+          <th class="dialog-rank-col">順位</th>
+          <th class="dialog-name-col">参加者</th>
+          <th>その巡の結果</th>
+        </tr>
+      </thead>
+      <tbody id="round-dialog-body"></tbody>
+    </table>
+  </div>
+</dialog>
 
 <script src="../js/config.js"></script>
 <script src="../js/api.js"></script>
