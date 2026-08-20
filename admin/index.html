@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ジャンルドラフト進行状況</title>
+<link rel="stylesheet" href="./admin.css">
+</head>
+<body>
+<main class="admin-container">
+  <header class="admin-header">
+    <div>
+      <h1>ジャンルドラフト進行状況</h1>
+      <p id="set-label" class="subtle">状態を取得しています。</p>
+    </div>
+    <div class="header-actions">
+      <span id="auto-refresh-status" class="subtle">自動更新: 3秒</span>
+      <button id="refresh-button" type="button">今すぐ更新</button>
+    </div>
+  </header>
+
+  <section id="error-panel" class="error-panel" hidden>
+    <h2>管理表示を読み込めません</h2>
+    <p id="error-message"></p>
+  </section>
+
+  <section id="status-panel" hidden>
+    <div class="summary-grid">
+      <div class="summary-card">
+        <span class="summary-label">回答受付</span>
+        <strong id="reception-status"></strong>
+      </div>
+      <div class="summary-card">
+        <span class="summary-label">ドラフト状態</span>
+        <strong id="draft-status"></strong>
+      </div>
+      <div class="summary-card">
+        <span class="summary-label">進行</span>
+        <strong id="progress-label"></strong>
+      </div>
+      <div class="summary-card">
+        <span class="summary-label">最終取得時刻</span>
+        <strong id="fetched-at"></strong>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table class="status-table">
+        <thead>
+          <tr>
+            <th class="rank-col">順位</th>
+            <th class="name-col">参加者</th>
+            <th class="answer-col">希望回答</th>
+            <th>第1巡</th>
+            <th>第2巡</th>
+            <th>第3巡</th>
+            <th class="final-col">最終結果</th>
+          </tr>
+        </thead>
+        <tbody id="participant-rows"></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<script src="../js/config.js"></script>
+<script src="../js/api.js"></script>
+<script src="./admin.js"></script>
+</body>
+</html>

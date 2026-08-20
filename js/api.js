@@ -59,5 +59,12 @@ const DraftApi = {
 
   saveAnswer(token, ranking) {
     return this.request('saveAnswer', { token, ranking });
+  },
+
+  loadAdminStatus(token, participantSet = '') {
+    return this.request('loadAdminStatus', {
+      token,
+      participantSet
+    });
   }
 };

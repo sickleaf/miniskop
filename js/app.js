@@ -371,25 +371,55 @@
 
     if (result.allocationType === 'RANDOM_UNANSWERED') {
       const note = document.createElement('p');
+      note.className = 'result-note';
       note.textContent = '未回答のためランダム割り当て';
       container.appendChild(note);
     }
 
-    (result.assignments || []).forEach((item) => {
-      const p = document.createElement('p');
+    const assignmentBlock = document.createElement('div');
+    assignmentBlock.className = 'result-assignments';
 
-      const rejected = item.rejectedBefore?.length
-        ? `（${item.rejectedBefore.join(' / ')}）`
-        : '';
+    (result.assignments || []).forEach((item, index) => {
+      const line = document.createElement('p');
+      line.className = 'result-assignment-line';
 
+      const slot = item.slot || (index + 1);
       const rank = item.preferenceRank
-        ? ` 第${item.preferenceRank}希望`
+        ? `（第${item.preferenceRank}希望）`
         : '';
 
-      p.textContent =
-        `${item.genreName}${rank}${rejected}`;
+      line.textContent =
+        `参加ジャンル${slot}： ${item.genreName} ${rank}`;
 
-      container.appendChild(p);
+      assignmentBlock.appendChild(line);
+    });
+
+    container.appendChild(assignmentBlock);
+
+    const historyTitle = document.createElement('h3');
+    historyTitle.className = 'draft-result-title';
+    historyTitle.textContent = '■ドラフト結果';
+    container.appendChild(historyTitle);
+
+    const history = result.draftHistory || [];
+
+    if (!history.length) {
+      const empty = document.createElement('p');
+      empty.className = 'muted';
+      empty.textContent =
+        result.allocationType === 'RANDOM_UNANSWERED'
+          ? '未回答のためドラフト判定履歴はありません。'
+          : 'ドラフト判定履歴はありません。';
+      container.appendChild(empty);
+      return;
+    }
+
+    history.forEach((item) => {
+      const line = document.createElement('p');
+      line.className = 'draft-history-line';
+      line.textContent =
+        `第${item.preferenceRank}希望（${item.genreName}）： ${item.status}`;
+      container.appendChild(line);
     });
   }
 
